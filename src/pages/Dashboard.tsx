@@ -13,7 +13,7 @@ import {
     LineElement
 } from 'chart.js'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
-import { Truck, Clock, AlertTriangle, CheckCircle, BarChart3, PieChart, TrendingUp, DollarSign, FileText, Info, X } from 'lucide-react'
+import { Truck, Clock, CheckCircle, BarChart3, DollarSign, FileText, Info, X } from 'lucide-react'
 import './Dashboard.css'
 
 // Register ChartJS components
