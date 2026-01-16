@@ -7,6 +7,7 @@ import Analytics from './pages/Analytics'
 import Training from './pages/Training'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { DataProvider } from './context/DataContext'
 import './App.css'
 
 function Navigation() {
@@ -81,9 +82,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <DataProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </DataProvider>
     </AuthProvider>
   )
 }
