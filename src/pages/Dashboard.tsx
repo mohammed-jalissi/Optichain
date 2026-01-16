@@ -197,7 +197,8 @@ function Dashboard() {
         event.target.value = ''
     }
 
-    const commonOptions = {
+    // Base options for charts (tooltip, responsive)
+    const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -213,7 +214,42 @@ function Dashboard() {
                 borderWidth: 1,
                 padding: 10
             }
+        }
+    }
+
+    const donutOptions = {
+        ...baseOptions,
+        plugins: {
+            ...baseOptions.plugins,
+            legend: {
+                position: 'right' as const,
+                labels: { color: 'rgba(255, 255, 255, 0.7)', font: { size: 11 }, boxWidth: 12 }
+            }
         },
+        cutout: '70%',
+        scales: {
+            x: { display: false },
+            y: { display: false }
+        }
+    }
+
+    const barOptions = {
+        ...baseOptions,
+        scales: {
+            x: {
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: 'rgba(255, 255, 255, 0.5)', maxRotation: 45, minRotation: 45 }
+            },
+            y: {
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: 'rgba(255, 255, 255, 0.5)' },
+                beginAtZero: true
+            }
+        }
+    }
+
+    const lineOptions = {
+        ...baseOptions,
         scales: {
             x: {
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -301,7 +337,7 @@ function Dashboard() {
                         <button className="info-btn-mini" onClick={() => setActiveHelp('delays')}><Info size={14} /></button>
                     </div>
                     <div className="chart-container">
-                        {delayData ? <Doughnut data={delayData} options={commonOptions} /> : <div className="spinner"></div>}
+                        {delayData ? <Doughnut data={delayData} options={donutOptions} /> : <div className="spinner"></div>}
                     </div>
                 </div>
 
@@ -311,7 +347,7 @@ function Dashboard() {
                         <button className="info-btn-mini" onClick={() => setActiveHelp('performance')}><Info size={14} /></button>
                     </div>
                     <div className="chart-container">
-                        {regionData ? <Bar data={regionData} options={commonOptions} /> : <div className="spinner"></div>}
+                        {regionData ? <Bar data={regionData} options={barOptions} /> : <div className="spinner"></div>}
                     </div>
                 </div>
 
@@ -321,7 +357,7 @@ function Dashboard() {
                         <button className="info-btn-mini" onClick={() => setActiveHelp('costs')}><Info size={14} /></button>
                     </div>
                     <div className="chart-container">
-                        {costData ? <Line data={costData} options={commonOptions} /> : <div className="spinner"></div>}
+                        {costData ? <Line data={costData} options={lineOptions} /> : <div className="spinner"></div>}
                     </div>
                 </div>
             </div>
