@@ -43,7 +43,7 @@ function Predictions() {
             setRegionOptions(regions)
             setModeTransportOptions(modes)
 
-            // Set default values if not already set (e.g. CTM, Casablanca, Routier)
+            // Set default values if not already set
             setFormData(prev => ({
                 ...prev,
                 transporteur: prev.transporteur || transporteurs.find(t => t.includes('CTM')) || transporteurs[0] || '',
@@ -219,18 +219,38 @@ function Predictions() {
                                     <thead>
                                         <tr>
                                             <th>Modèle</th>
-                                            <th>Accuracy</th>
-                                            <th>F1-Score</th>
-                                            <th>AUC-ROC</th>
+                                            {activeTab === 'classification' ? (
+                                                <>
+                                                    <th>Accuracy</th>
+                                                    <th>F1-Score</th>
+                                                    <th>AUC-ROC</th>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <th>R² Score</th>
+                                                    <th>MAE</th>
+                                                    <th>RMSE</th>
+                                                </>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {trainingResults[activeTab as keyof typeof trainingResults].map((model: any, index: number) => (
                                             <tr key={index} className={model.isBest ? 'best-model' : ''}>
                                                 <td>{model.model}</td>
-                                                <td>{(model.accuracy * 100).toFixed(1)}%</td>
-                                                <td>{model.f1.toFixed(3)}</td>
-                                                <td>{model.auc ? model.auc.toFixed(3) : '-'}</td>
+                                                {activeTab === 'classification' ? (
+                                                    <>
+                                                        <td>{(model.accuracy * 100).toFixed(1)}%</td>
+                                                        <td>{model.f1.toFixed(3)}</td>
+                                                        <td>{model.auc ? model.auc.toFixed(3) : '-'}</td>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <td>{(model.r2 * 100).toFixed(1)}%</td>
+                                                        <td>{model.mae.toFixed(3)}</td>
+                                                        <td>{model.rmse.toFixed(3)}</td>
+                                                    </>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
