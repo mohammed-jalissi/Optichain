@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Circle, Popup, Tooltip as LeafletTooltip, LayersControl, Polyline } from 'react-leaflet'
-import { Filter, Download, AlertTriangle, Truck, Package, Scale, TrendingUp, DollarSign, Activity, Calculator } from 'lucide-react'
+import { Filter, Download, AlertTriangle, Truck, Package, Scale, TrendingUp, DollarSign, Activity } from 'lucide-react'
 import Papa from 'papaparse'
 import 'leaflet/dist/leaflet.css'
 import './MapIntelligence.css'

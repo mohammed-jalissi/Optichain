@@ -57,7 +57,7 @@ function Dashboard() {
                 Papa.parse(csv, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: (results) => {
+                    complete: (results: any) => {
                         processData(results.data)
                         setTableData(results.data.slice(0, 50)) // Load first 50 rows for preview
                         setLoading(false)
