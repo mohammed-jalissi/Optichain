@@ -186,15 +186,7 @@ function Analytics() {
                             </div>
                         </div>
 
-                        <div className="insight-card">
-                            <div className="insight-icon" style={{ background: 'rgba(255, 170, 0, 0.2)' }}>
-                                🚜
-                            </div>
-                            <div className="insight-content">
-                                <h4>Facteur Critique</h4>
-                                <p>Le <strong>délai de livraison</strong> et le <strong>transporteur</strong> sont les deux variables pesant pour {((featureImportance[0].importance + featureImportance[1].importance) * 100).toFixed(0)}% du résultat.</p>
-                            </div>
-                        </div>
+
 
                         <div className="insight-card">
                             <div className="insight-icon" style={{ background: 'rgba(255, 51, 102, 0.2)' }}>
