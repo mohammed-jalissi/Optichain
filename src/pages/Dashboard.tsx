@@ -251,8 +251,8 @@ function Dashboard() {
             {/* Header */}
             <header className="dashboard-header glass-card">
                 <div>
-                    <h1><BarChart3 className="icon-pulse" /> Dashboard Logistique</h1>
-                    <p className="subtitle">Vue d'ensemble et pilotage de la performance - {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <h1><BarChart3 className="icon-pulse" /> Tableau de Bord</h1>
+                    <p className="subtitle">Vue d'ensemble de vos opérations logistiques - {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
                 <div className="header-actions">
                     <input
@@ -263,7 +263,7 @@ function Dashboard() {
                         style={{ display: 'none' }}
                     />
                     <button className="primary-btn" onClick={handlePowerBIClick}>
-                        <TrendingUp size={18} /> Connecter PowerBI
+                        <FileText size={18} /> Connect Power BI
                     </button>
                 </div>
             </header>
