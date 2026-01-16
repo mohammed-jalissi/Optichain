@@ -10,14 +10,7 @@ function Analytics() {
     const classChampion = trainingResults.classification.find(m => m.isBest) || trainingResults.classification[0]
     const regChampion = trainingResults.regression.find(m => m.isBest) || trainingResults.regression[0]
 
-    const featureImportance = [
-        { feature: 'delai_livraison', importance: 0.32 },
-        { feature: 'transporteur_id', importance: 0.24 },
-        { feature: 'poids_kg', importance: 0.18 },
-        { feature: 'region_destination', importance: 0.14 },
-        { feature: 'categorie_produit', importance: 0.07 },
-        { feature: 'mois_commande', importance: 0.05 }
-    ]
+
 
     // Ajustement de la matrice basée sur l'accuracy réelle (ex: 99.2%)
     // Pour ~1000 échantillons
@@ -60,42 +53,7 @@ function Analytics() {
             </div>
 
             <div className="analytics-grid">
-                {/* Feature Importance */}
-                <div className="glass-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3>
-                            <BarChart3 size={24} />
-                            Feature Importance
-                        </h3>
-                        <button
-                            className="info-btn-analytics"
-                            onClick={() => setActiveHelp('featureImportance')}
-                            title="En savoir plus"
-                        >
-                            <Info size={20} />
-                        </button>
-                    </div>
-                    <p className="card-subtitle">Importance relative des variables pour {classChampion.model}</p>
 
-                    <div className="feature-bars">
-                        {featureImportance.map((item, idx) => (
-                            <div key={idx} className="feature-item">
-                                <div className="feature-label">{item.feature}</div>
-                                <div className="feature-bar-container">
-                                    <div
-                                        className="feature-bar"
-                                        style={{
-                                            width: `${item.importance * 100}%`,
-                                            animationDelay: `${idx * 0.1}s`
-                                        }}
-                                    >
-                                        <span className="feature-value">{(item.importance * 100).toFixed(0)}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* Regression Performance */}
                 <div className="glass-card">
