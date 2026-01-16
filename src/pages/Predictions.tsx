@@ -214,7 +214,7 @@ function Predictions() {
                         </div>
                     ) : (
                         <div className="model-comparison">
-                            <h3>Comparaison des Modèles</h3>
+                            <h3>Comparaison des Modèles ({activeTab === 'classification' ? 'Retard' : 'Coût'})</h3>
                             <div className="model-table">
                                 <table>
                                     <thead>
@@ -226,38 +226,20 @@ function Predictions() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr className="best-model">
-                                            <td>XGBoost</td>
-                                            <td>99.3%</td>
-                                            <td>0.993</td>
-                                            <td>0.991</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Random Forest</td>
-                                            <td>99.0%</td>
-                                            <td>0.990</td>
-                                            <td>0.995</td>
-                                        </tr>
-                                        <tr>
-                                            <td>SVM</td>
-                                            <td>99.0%</td>
-                                            <td>0.990</td>
-                                            <td>0.993</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Logistic Regression</td>
-                                            <td>99.0%</td>
-                                            <td>0.990</td>
-                                            <td>0.990</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Gradient Boosting</td>
-                                            <td>99.0%</td>
-                                            <td>0.990</td>
-                                            <td>0.990</td>
-                                        </tr>
+                                        {trainingResults[activeTab].map((model: any, index: number) => (
+                                            <tr key={index} className={model.isBest ? 'best-model' : ''}>
+                                                <td>{model.model}</td>
+                                                <td>{(model.accuracy * 100).toFixed(1)}%</td>
+                                                <td>{model.f1.toFixed(3)}</td>
+                                                <td>{model.auc ? model.auc.toFixed(3) : '-'}</td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
+                            </div>
+                            <div className="best-model-note">
+                                <CheckCircle2 size={16} style={{ display: 'inline', marginRight: '8px' }} />
+                                Le meilleur modèle est sélectionné automatiquement pour les prédictions.
                             </div>
                         </div>
                     )}
