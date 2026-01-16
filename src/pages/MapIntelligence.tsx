@@ -71,7 +71,7 @@ interface CityAggregate {
 
 function MapIntelligence() {
     const [rawData, setRawData] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+
 
     // --- Intelligent Filters ---
     const [filterStatus, setFilterStatus] = useState<'all' | 'delayed' | 'on-time' | 'warning'>('all')
@@ -95,12 +95,10 @@ function MapIntelligence() {
                     skipEmptyLines: true,
                     complete: (results) => {
                         setRawData(results.data)
-                        setLoading(false)
                     }
                 })
             } catch (err) {
                 console.error("Error loading map data:", err)
-                setLoading(false)
             }
         }
         fetchData()
