@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { AlertCircle, CheckCircle2, Calculator, TrendingUp } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import './Predictions.css'
+import trainingResults from '../data/training_results.json'
 
 interface PredictionInput {
     quantite: number
