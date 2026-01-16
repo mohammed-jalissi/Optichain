@@ -43,6 +43,19 @@ def train_and_evaluate():
     for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].fillna(df[col].mode()[0])
 
+    # ... (Keep Imports)
+
+    # Dictionary to store artifacts
+    artifacts = {
+        "features": [],
+        "encoders": {},
+        "scaler": {},
+        "models": {
+            "classification": {},
+            "regression": {}
+        }
+    }
+
     print("Encodage & Normalisation...")
     categorical_cols = df.select_dtypes(include=['object']).columns
     
@@ -50,6 +63,8 @@ def train_and_evaluate():
         if col not in ['order_id', 'date_commande', 'date_expedition', 'date_livraison']:
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col].astype(str))
+            # Save mapping
+            artifacts["encoders"][col] = {str(k): int(v) for k, v in zip(le.classes_, le.transform(le.classes_))}
 
     # --- Définition des Features et Targets ---
     target_cls = 'retard'
@@ -58,6 +73,9 @@ def train_and_evaluate():
     drop_cols = ['order_id', 'date_commande', 'date_expedition', 'date_livraison', target_cls, target_reg, 'ecart_delai', 'delai_prevu']
     feature_cols = [c for c in df.columns if c not in drop_cols and c in df.select_dtypes(include=[np.number]).columns]
     
+    artifacts["features"] = feature_cols
+    print(f"Features utilisées: {feature_cols}")
+
     X = df[feature_cols]
     y_cls = df[target_cls] if target_cls in df.columns else np.random.randint(0, 2, size=len(df))
     y_reg = df[target_reg] if target_reg in df.columns else np.random.rand(len(df)) * 10
@@ -65,6 +83,12 @@ def train_and_evaluate():
     # Standard Scaling
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
+    
+    # Save Scaler params
+    artifacts["scaler"] = {
+        "mean": scaler.mean_.tolist(),
+        "scale": scaler.scale_.tolist()
+    }
 
     # Split
     X_train, X_test, y_cls_train, y_cls_test, y_reg_train, y_reg_test = train_test_split(
@@ -74,6 +98,25 @@ def train_and_evaluate():
     results = {
         "classification": [],
         "regression": []
+    }
+
+    # Train Exportable Models (Logistic & Linear) specifically for Frontend usage
+    print("\nTraining Exportable Models for Frontend...")
+    
+    # Logistic Regression
+    lr_model = LogisticRegression(max_iter=1000, random_state=42)
+    lr_model.fit(X_train, y_cls_train)
+    artifacts["models"]["classification"] = {
+        "coefficients": lr_model.coef_[0].tolist(),
+        "intercept": float(lr_model.intercept_[0])
+    }
+    
+    # Linear Regression
+    lin_model = LinearRegression()
+    lin_model.fit(X_train, y_reg_train)
+    artifacts["models"]["regression"] = {
+        "coefficients": lin_model.coef_.tolist(),
+        "intercept": float(lin_model.intercept_)
     }
 
     # --- Helper pour benchmark Classification ---
@@ -154,12 +197,17 @@ def train_and_evaluate():
 
     # --- Export Results ---
     output_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'data', 'training_results.json')
+    artifacts_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'data', 'model_artifacts.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=4)
         
+    with open(artifacts_path, 'w', encoding='utf-8') as f:
+        json.dump(artifacts, f, indent=4)
+        
     print(f"\nRésultats exportés vers {output_path}")
+    print(f"Modèles exportés vers {artifacts_path}")
 
 if __name__ == "__main__":
     train_and_evaluate()
