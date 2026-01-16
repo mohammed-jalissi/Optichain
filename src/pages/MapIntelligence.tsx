@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { MapContainer, TileLayer, Circle, Popup, Tooltip as LeafletTooltip, LayersControl, Polyline } from 'react-leaflet'
-import { Filter, Download, AlertTriangle, Truck, Package, Scale, TrendingUp, DollarSign, Activity, Globe } from 'lucide-react'
+import { MapContainer, TileLayer, Circle, Popup, LayersControl, Polyline } from 'react-leaflet'
+import { Package, DollarSign, Activity } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './MapIntelligence.css'
 import L from 'leaflet'
@@ -74,7 +74,7 @@ function MapIntelligence() {
     // --- Intelligent Filters ---
     const [filterStatus, setFilterStatus] = useState<'all' | 'delayed' | 'on-time' | 'warning'>('all')
     const [filterTransporteur, setFilterTransporteur] = useState<string>('all')
-    const [filterMinWeight, setFilterMinWeight] = useState<number>(0)
+    const [filterMinWeight] = useState<number>(0)
 
     // View Options
     const [showFlows, setShowFlows] = useState(true)
