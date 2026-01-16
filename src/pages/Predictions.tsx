@@ -44,7 +44,6 @@ function Predictions() {
             setModeTransportOptions(modes)
 
             // Set default values if not already set (e.g. CTM, Casablanca, Routier)
-            // Screenshot shows 'CTM' (likely CTM Messagerie), 'Casablanca', 'Routier'
             setFormData(prev => ({
                 ...prev,
                 transporteur: prev.transporteur || transporteurs.find(t => t.includes('CTM')) || transporteurs[0] || '',
@@ -159,7 +158,6 @@ function Predictions() {
                             </select>
                         </div>
 
-                        {/* New Fields from Screenshot */}
                         <div className="form-group">
                             <label>Région</label>
                             <select
@@ -183,7 +181,7 @@ function Predictions() {
                         </div>
                     </div>
 
-                    <button type="submit" className="primary-btn" style={{ width: '100%', marginTop: '1rem' }}>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
                         Générer la Prédiction
                     </button>
                 </form>
@@ -209,7 +207,7 @@ function Predictions() {
                                 <p><strong>Confiance IA:</strong> {(prediction.confidence * 100).toFixed(0)}%</p>
                                 <p>{prediction.details}</p>
                             </div>
-                            <button className="secondary-btn" onClick={() => setPrediction(null)} style={{ marginTop: '1rem', width: '100%' }}>
+                            <button className="btn btn-secondary" onClick={() => setPrediction(null)} style={{ marginTop: '1rem', width: '100%' }}>
                                 Nouvelle simulation
                             </button>
                         </div>
@@ -227,7 +225,7 @@ function Predictions() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {trainingResults[activeTab].map((model: any, index: number) => (
+                                        {trainingResults[activeTab as keyof typeof trainingResults].map((model: any, index: number) => (
                                             <tr key={index} className={model.isBest ? 'best-model' : ''}>
                                                 <td>{model.model}</td>
                                                 <td>{(model.accuracy * 100).toFixed(1)}%</td>
