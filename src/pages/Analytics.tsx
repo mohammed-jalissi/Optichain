@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, PieChart, Target, Activity, ShieldCheck, Info, X } from 'lucide-react'
+import { PieChart, Target, Activity, ShieldCheck, Info, X } from 'lucide-react'
 import trainingResults from '../data/training_results.json'
 import './Analytics.css'
 
