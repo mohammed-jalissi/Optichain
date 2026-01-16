@@ -73,18 +73,22 @@ function Predictions() {
                 details: isLate ? "Risque élevé dû au poids et transporteur." : "Conditions optimales."
             })
         } else {
-            // Logic for regression (Cost)
-            const { poids_kg, quantite, transporteur } = formData
-            let baseRate = 10
-            if (transporteur && transporteur.includes('CTM')) baseRate = 12
+            // Logic for regression (Delay Prediction)
+            const { poids_kg, delai_livraison, transporteur } = formData
 
-            const cost = (poids_kg * baseRate) + (quantite * 0.5)
+            // Simulation logic: Base delay + factors
+            let predictedDelay = delai_livraison // Start with expected delay
+
+            // Add randomness/factors based on inputs
+            if (poids_kg > 500) predictedDelay += 1.5
+            if (transporteur && transporteur.includes('Messagerie')) predictedDelay += 0.5
+            if (Math.random() > 0.5) predictedDelay += 0.8
 
             setPrediction({
-                result: `${cost.toFixed(2)} MAD`,
-                confidence: 0.92,
+                result: `${predictedDelay.toFixed(1)} Jours`,
+                confidence: 0.89,
                 type: 'regression',
-                details: `Estimation basée sur tarif moyen ${baseRate} MAD/kg.`
+                details: `Estimation basée sur historique. Ecart probable: ±${(predictedDelay * 0.1).toFixed(1)}j.`
             })
         }
     }
@@ -114,7 +118,7 @@ function Predictions() {
             <div className="prediction-content">
                 {/* Left Column: Form */}
                 <form className="prediction-form" onSubmit={predict}>
-                    <h3><Calculator size={20} /> {activeTab === 'classification' ? 'Prédire un Retard' : 'Estimer un Coût'}</h3>
+                    <h3><Calculator size={20} /> {activeTab === 'classification' ? 'Prédire un Retard' : 'Estimer le Délai'}</h3>
 
                     <div className="form-grid">
                         <div className="form-group">
@@ -199,7 +203,7 @@ function Predictions() {
                                 ) : (
                                     <div className="result-value">
                                         <span>{prediction.result}</span>
-                                        <small>Coût Estimé</small>
+                                        <small>Délai Estimé</small>
                                     </div>
                                 )}
                             </div>
@@ -213,7 +217,7 @@ function Predictions() {
                         </div>
                     ) : (
                         <div className="model-comparison">
-                            <h3>Comparaison des Modèles ({activeTab === 'classification' ? 'Retard' : 'Coût'})</h3>
+                            <h3>Comparaison des Modèles ({activeTab === 'classification' ? 'Retard' : 'Délai'})</h3>
                             <div className="model-table">
                                 <table>
                                     <thead>
