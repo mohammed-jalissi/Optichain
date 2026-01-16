@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertCircle, Clock, CheckCircle2, Calculator, TrendingUp } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Calculator, TrendingUp } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import './Predictions.css'
 import trainingResults from '../data/training_results.json'
@@ -27,8 +27,6 @@ function Predictions() {
 
     // Options lists
     const [transporteurOptions, setTransporteurOptions] = useState<string[]>([])
-    const [regionOptions, setRegionOptions] = useState<string[]>([])
-    const [modeTransportOptions, setModeTransportOptions] = useState<string[]>([])
 
     const { data: globalData, loading } = useData()
 
@@ -36,19 +34,13 @@ function Predictions() {
         if (!loading && globalData && globalData.length > 0) {
             const data = globalData
             const transporteurs = [...new Set(data.map((item: any) => item.transporteur).filter(Boolean))].sort() as string[]
-            const regions = [...new Set(data.map((item: any) => item.region).filter(Boolean))].sort() as string[]
-            const modes = [...new Set(data.map((item: any) => item.mode_transport).filter(Boolean))].sort() as string[]
 
             setTransporteurOptions(transporteurs)
-            setRegionOptions(regions)
-            setModeTransportOptions(modes)
 
             // Set default values if not already set
             setFormData(prev => ({
                 ...prev,
-                transporteur: prev.transporteur || transporteurs[0] || '',
-                region: prev.region || regions[0] || '',
-                mode_transport: prev.mode_transport || modes[0] || ''
+                transporteur: prev.transporteur || transporteurs[0] || ''
             }))
         }
     }, [globalData, loading])
