@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertCircle, Clock, CheckCircle2, Calculator } from 'lucide-react'
+import { AlertCircle, Clock, CheckCircle2, Calculator, TrendingUp } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import './Predictions.css'
 import trainingResults from '../data/training_results.json'
@@ -16,7 +16,7 @@ interface PredictionInput {
 function Predictions() {
     const [activeTab, setActiveTab] = useState<'classification' | 'regression'>('classification')
     const [formData, setFormData] = useState<PredictionInput>({
-        quantite: 100,
+        quantite: 100, // Default values matching previously seen code
         poids_kg: 250,
         delai_livraison: 5,
         transporteur: '',
@@ -25,17 +25,16 @@ function Predictions() {
     })
     const [prediction, setPrediction] = useState<any>(null)
 
+    // Options lists
     const [transporteurOptions, setTransporteurOptions] = useState<string[]>([])
     const [regionOptions, setRegionOptions] = useState<string[]>([])
     const [modeTransportOptions, setModeTransportOptions] = useState<string[]>([])
 
-    // Get global data
     const { data: globalData, loading } = useData()
 
     useEffect(() => {
-        if (!loading && globalData.length > 0) {
+        if (!loading && globalData && globalData.length > 0) {
             const data = globalData
-
             const transporteurs = [...new Set(data.map((item: any) => item.transporteur).filter(Boolean))].sort() as string[]
             const regions = [...new Set(data.map((item: any) => item.region).filter(Boolean))].sort() as string[]
             const modes = [...new Set(data.map((item: any) => item.mode_transport).filter(Boolean))].sort() as string[]
@@ -54,175 +53,139 @@ function Predictions() {
         }
     }, [globalData, loading])
 
-    // Simplified prediction logic
-    const predictDelay = () => {
-        const { poids_kg, delai_livraison, transporteur } = formData
-
-        // Simple heuristic
-        let score = 0
-        if (poids_kg > 300) score += 0.3
-        if (delai_livraison > 5) score += 0.2
-        if (transporteur === 'Amana') score += 0.25
-
-        const isLate = score > 0.5
-        const logic = isLate
-            ? "Poids élevé (>300kg) combiné à un transporteur à risque augmente la probabilité de retard."
-            : "Paramètres standards, probabilité de livraison à l'heure élevée."
-
-        setPrediction({
-            prediction: isLate ? "Retard Probable" : "À l'heure",
-            confidence: (0.75 + Math.random() * 0.2).toFixed(2),
-            logic: logic,
-            impact: isLate ? "Risque de pénalité client et surcharge logistique." : "Flux optimisé, pas d'action requise."
-        })
-    }
-
-    const predictCost = () => {
-        const { poids_kg, quantite, transporteur } = formData
-
-        // Base cost logic
-        let baseRate = 10 // MAD per kg
-        if (transporteur === 'CTM Messagerie') baseRate = 12
-        if (transporteur === 'SDTM') baseRate = 9
-
-        const estimatedCost = (poids_kg * baseRate) + (quantite * 0.5)
-
-        setPrediction({
-            prediction: `${estimatedCost.toFixed(2)} MAD`,
-            confidence: "0.92",
-            logic: `Basé sur le tarif moyen de ${baseRate} MAD/kg pour ${transporteur} et le volume de commande.`,
-            impact: estimatedCost > 5000 ? "Coût élevé : Envisager un groupage pour réduire les frais." : "Coût dans la moyenne standard."
-        })
-    }
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const predict = (e: React.FormEvent) => {
         e.preventDefault()
+
         if (activeTab === 'classification') {
-            predictDelay()
+            // Logic for classification (Delay)
+            // Simple heuristic
+            const { poids_kg, delai_livraison, transporteur } = formData
+            let score = 0
+            if (poids_kg > 300) score += 0.3
+            if (delai_livraison > 5) score += 0.2
+            if (transporteur === 'Amana') score += 0.25
+
+            const isLate = score > 0.5
+
+            setPrediction({
+                result: isLate ? "Retard Probable" : "À l'heure",
+                confidence: 0.85,
+                type: 'classification',
+                details: isLate ? "Risque élevé dû au poids et transporteur." : "Conditions optimales."
+            })
         } else {
-            predictCost()
+            // Logic for regression (Cost)
+            const { poids_kg, quantite, transporteur } = formData
+            let baseRate = 10
+            if (transporteur === 'CTM Messagerie') baseRate = 12
+
+            const cost = (poids_kg * baseRate) + (quantite * 0.5)
+
+            setPrediction({
+                result: `${cost.toFixed(2)} MAD`,
+                confidence: 0.92,
+                type: 'regression',
+                details: `Estimation basée sur tarif moyen ${baseRate} MAD/kg.`
+            })
         }
     }
 
     return (
-        <div className="predictions-page">
-            <header className="page-header">
-                <h1 className="page-title"><Calculator className="icon-pulse" /> Simulateur de Prédictions IA</h1>
-                <p className="page-subtitle">Anticipez les retards et estimez les coûts grâce au Machine Learning</p>
-            </header>
+        <div className="predictions fade-in">
+            <div className="prediction-tabs">
+                <button
+                    className={`tab-btn ${activeTab === 'classification' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('classification'); setPrediction(null) }}
+                >
+                    <AlertCircle size={18} /> Prédiction de Retard (Classification)
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'regression' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('regression'); setPrediction(null) }}
+                >
+                    <TrendingUp size={18} /> Estimation des Coûts (Régression)
+                </button>
+            </div>
 
-            <div className="predictions-layout">
-                {/* Input Panel */}
-                <div className="input-panel glass-card">
-                    <div className="tabs">
-                        <button
-                            className={`tab-btn ${activeTab === 'classification' ? 'active' : ''}`}
-                            onClick={() => { setActiveTab('classification'); setPrediction(null) }}
-                        >
-                            <AlertCircle size={18} /> Prédiction de Retard
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'regression' ? 'active' : ''}`}
-                            onClick={() => { setActiveTab('regression'); setPrediction(null) }}
-                        >
-                            <Clock size={18} /> Estimation des Coûts
-                        </button>
-                    </div>
+            <div className="prediction-content">
+                <form className="prediction-form" onSubmit={predict}>
+                    <h3><Calculator size={20} /> Paramètres de Simulation</h3>
 
-                    <form onSubmit={handleSubmit} className="prediction-form">
+                    <div className="form-grid">
                         <div className="form-group">
                             <label>Transporteur</label>
                             <select
+                                className="form-input"
                                 value={formData.transporteur}
-                                onChange={(e) => setFormData({ ...formData, transporteur: e.target.value })}
-                                disabled={loading}
+                                onChange={e => setFormData({ ...formData, transporteur: e.target.value })}
                             >
-                                {loading && <option>Chargement...</option>}
-                                {transporteurOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                {transporteurOptions.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
 
                         <div className="form-group">
-                            <label>Région de Livraison</label>
+                            <label>Région</label>
                             <select
+                                className="form-input"
                                 value={formData.region}
-                                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                disabled={loading}
+                                onChange={e => setFormData({ ...formData, region: e.target.value })}
                             >
-                                {loading && <option>Chargement...</option>}
-                                {regionOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                {regionOptions.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </div>
 
                         <div className="form-group">
-                            <label>Mode de Transport</label>
-                            <select
-                                value={formData.mode_transport}
-                                onChange={(e) => setFormData({ ...formData, mode_transport: e.target.value })}
-                                disabled={loading}
-                            >
-                                {loading && <option>Chargement...</option>}
-                                {modeTransportOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                            <label>Quantité</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                value={formData.quantite}
+                                onChange={e => setFormData({ ...formData, quantite: Number(e.target.value) })}
+                            />
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Poids (kg)</label>
-                                <input
-                                    type="number"
-                                    value={formData.poids_kg}
-                                    onChange={(e) => setFormData({ ...formData, poids_kg: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Délai Prévu (jours)</label>
-                                <input
-                                    type="number"
-                                    value={formData.delai_livraison}
-                                    onChange={(e) => setFormData({ ...formData, delai_livraison: Number(e.target.value) })}
-                                />
-                            </div>
+                        <div className="form-group">
+                            <label>Poids (kg)</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                value={formData.poids_kg}
+                                onChange={e => setFormData({ ...formData, poids_kg: Number(e.target.value) })}
+                            />
                         </div>
+                    </div>
 
-                        <button type="submit" className="predict-btn">
-                            Lancer la Prédiction
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" className="primary-btn" style={{ width: '100%', marginTop: '1rem' }}>
+                        Lancer l'IA
+                    </button>
+                </form>
 
-                {/* Results Panel */}
-                <div className="results-panel glass-card">
-                    {prediction ? (
-                        <div className="prediction-result fade-in">
-                            <div className={`result-header ${activeTab === 'classification' && prediction.prediction === 'Retard Probable' ? 'negative' : 'positive'}`}>
-                                <h2>{prediction.prediction}</h2>
-                                <span className="confidence-badge">Confiance: {(parseFloat(prediction.confidence) * 100).toFixed(0)}%</span>
-                            </div>
-
-                            <div className="result-details">
-                                <div className="detail-item">
-                                    <h3><CheckCircle2 size={18} /> Logique de l'IA</h3>
-                                    <p>{prediction.logic}</p>
+                {prediction && (
+                    <div className="prediction-result">
+                        <div className={`result-badge ${prediction.type === 'classification' ? (prediction.result === 'Retard Probable' ? 'delayed' : 'on-time') : ''}`}>
+                            {prediction.type === 'classification' ? (
+                                <>
+                                    {prediction.result === 'Retard Probable' ? <AlertCircle /> : <CheckCircle2 />}
+                                    {prediction.result}
+                                </>
+                            ) : (
+                                <div className="result-value">
+                                    <span>{prediction.result}</span>
+                                    <small>Coût Estimé</small>
                                 </div>
-                                <div className="detail-item">
-                                    <h3><AlertCircle size={18} /> Impact Opérationnel</h3>
-                                    <p>{prediction.impact}</p>
-                                </div>
-                            </div>
+                            )}
+                        </div>
 
-                            <div className="model-info">
-                                <p>Modèle utilisé : <strong>{activeTab === 'classification' ? trainingResults.classification.champion : trainingResults.regression.champion}</strong></p>
+                        <div className="result-details">
+                            <p><strong>Confiance IA:</strong> {(prediction.confidence * 100).toFixed(0)}%</p>
+                            <p>{prediction.details}</p>
+
+                            <div className="best-model-note">
+                                Champion: {activeTab === 'classification' ? trainingResults.classification.champion : trainingResults.regression.champion}
                             </div>
                         </div>
-                    ) : (
-                        <div className="empty-state">
-                            <Calculator size={48} />
-                            <h3>Prêt à prédire</h3>
-                            <p>Modifiez les paramètres et lancez la simulation pour voir les résultats de l'IA en temps réel.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     )

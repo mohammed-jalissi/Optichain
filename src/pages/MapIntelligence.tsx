@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Circle, Popup, Tooltip as LeafletTooltip, LayersControl, Polyline } from 'react-leaflet'
-import { Filter, Download, AlertTriangle, Truck, Package, Scale, TrendingUp, DollarSign, Activity } from 'lucide-react'
+import { Filter, Download, AlertTriangle, Truck, Package, Scale, TrendingUp, DollarSign, Activity, Globe } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './MapIntelligence.css'
 import L from 'leaflet'
@@ -65,7 +65,6 @@ interface CityAggregate {
     avgDelay: number
     revenue: number
     totalWeight: number
-    avgCostPerKg: number
     mainTransporteur: string
 }
 
@@ -80,8 +79,6 @@ function MapIntelligence() {
     // View Options
     const [showFlows, setShowFlows] = useState(true)
 
-    // --- Dynamic Filters & Aggregation Pipeline ---
-
     // 1. Get Unique Transporteurs for Dropdown
     const availableTransporteurs = useMemo(() => {
         const t = new Set(rawData.map(r => r.transporteur).filter(Boolean))
@@ -89,10 +86,13 @@ function MapIntelligence() {
     }, [rawData])
 
     // 2. Filter Raw Data
+    // Helper to extract numeric values safely
+    const getNum = (val: any) => typeof val === 'number' ? val : (parseFloat(val) || 0)
+
     const filteredRawData = useMemo(() => {
         return rawData.filter(row => {
             // Filter by Status
-            const delay = typeof row.retard === 'number' ? row.retard : parseFloat(row.retard as unknown as string) || 0
+            const delay = getNum(row.retard)
             if (filterStatus === 'delayed' && delay === 0) return false
             if (filterStatus === 'on-time' && delay > 0) return false
             if (filterStatus === 'warning' && (delay === 0 || delay >= 2)) return false
@@ -101,7 +101,7 @@ function MapIntelligence() {
             if (filterTransporteur !== 'all' && row.transporteur !== filterTransporteur) return false
 
             // Filter by Weight
-            const weight = typeof row.poids_kg === 'number' ? row.poids_kg : parseFloat(row.poids_kg as unknown as string) || 0
+            const weight = getNum(row.poids_kg)
             if (weight < filterMinWeight) return false
 
             return true
@@ -113,7 +113,6 @@ function MapIntelligence() {
         const cities: { [key: string]: any } = {}
 
         filteredRawData.forEach(row => {
-            // Priority to 'region' to ensure all regions from dataset are shown
             const locationName = row.region || row.client_ville || row.ville
             const normalizedCity = Object.keys(CITY_COORDINATES).find(c =>
                 locationName && locationName.toLowerCase().includes(c.toLowerCase())
@@ -121,25 +120,17 @@ function MapIntelligence() {
 
             if (normalizedCity) {
                 if (!cities[normalizedCity]) {
-                    cities[normalizedCity] = {
-                        total: 0,
-                        delayed: 0,
-                        totalDelayDays: 0,
-                        transporteurs: {},
-                        revenue: 0,
-                        weight: 0
-                    }
+                    cities[normalizedCity] = { total: 0, delayed: 0, totalDelayDays: 0, transporteurs: {}, revenue: 0, weight: 0 }
                 }
 
                 const entry = cities[normalizedCity]
                 entry.total++
 
-                const delay = typeof row.retard === 'number' ? row.retard : parseFloat(row.retard as unknown as string) || 0
-                if (delay > 0) entry.delayed++
+                if (getNum(row.retard) > 0) entry.delayed++
 
-                entry.totalDelayDays += (typeof row.delai_livraison === 'number' ? row.delai_livraison : parseFloat(row.delai_livraison as unknown as string) || 0)
-                entry.revenue += (typeof row.cout_transport === 'number' ? row.cout_transport : parseFloat(row.cout_transport as unknown as string) || 0)
-                entry.weight += (typeof row.poids_kg === 'number' ? row.poids_kg : parseFloat(row.poids_kg as unknown as string) || 0)
+                entry.totalDelayDays += getNum(row.delai_livraison)
+                entry.revenue += getNum(row.cout_transport)
+                entry.weight += getNum(row.poids_kg)
 
                 const transp = row.transporteur
                 entry.transporteurs[transp] = (entry.transporteurs[transp] || 0) + 1
@@ -158,33 +149,19 @@ function MapIntelligence() {
                 avgDelay: c.totalDelayDays / c.total,
                 revenue: c.revenue,
                 totalWeight: c.weight,
-                avgCostPerKg: c.weight > 0 ? c.revenue / c.weight : 0,
                 mainTransporteur: mainTransp as string
             } as CityAggregate
         })
     }, [filteredRawData])
 
-    // 4. Calculate Global Vision Stats (for the visible filtered dataset)
+    // 4. Global Stats
     const globalStats = useMemo(() => {
         const totalVol = filteredRawData.length
         if (totalVol === 0) return null
 
-        const totalDelayed = filteredRawData.filter(r => {
-            const d = typeof r.retard === 'number' ? r.retard : parseFloat(r.retard as unknown as string) || 0
-            return d > 0
-        }).length
-
-        const totalRevenue = filteredRawData.reduce((acc, r) => {
-            const rev = typeof r.cout_transport === 'number' ? r.cout_transport : parseFloat(r.cout_transport as unknown as string) || 0
-            return acc + rev
-        }, 0)
-
-        const sumDelay = filteredRawData.reduce((acc, r) => {
-            const d = typeof r.delai_livraison === 'number' ? r.delai_livraison : parseFloat(r.delai_livraison as unknown as string) || 0
-            return acc + d
-        }, 0)
-
-        const avgDelay = sumDelay / totalVol
+        const totalDelayed = filteredRawData.filter(r => getNum(r.retard) > 0).length
+        const totalRevenue = filteredRawData.reduce((acc, r) => acc + getNum(r.cout_transport), 0)
+        const avgDelay = filteredRawData.reduce((acc, r) => acc + getNum(r.delai_livraison), 0) / totalVol
 
         return {
             volume: totalVol,
@@ -194,210 +171,129 @@ function MapIntelligence() {
         }
     }, [filteredRawData])
 
-    if (loading) {
-        return (
-            <div className="map-loading">
-                <div className="spinner"></div>
-                <p>Chargement de l'intelligence géographique...</p>
-            </div>
-        )
-    }
+    if (loading) return <div className="loading">Chargement de la carte...</div>
 
     return (
-        <div className="map-page glass-card fade-in">
-            {/* Header with Stats */}
-            <header className="map-header">
-                <div>
-                    <h1><Activity className="icon-pulse" /> Map Intelligence</h1>
-                    <p className="subtitle">Visualisation géospatiale des flux et de la performance</p>
-                </div>
+        <div className="map-intelligence-container">
+            <div className="map-toolbar">
+                <div className="toolbar-left">
+                    <h2 className="toolbar-title"><Globe size={20} /> Intelligence Géographique</h2>
 
-                {globalStats && (
-                    <div className="global-stats-row">
-                        <div className="mini-stat">
-                            <Package size={16} />
-                            <span>{globalStats.volume} Cmds</span>
-                        </div>
-                        <div className="mini-stat">
-                            <TrendingUp size={16} className={parseFloat(globalStats.otif) > 90 ? 'text-success' : 'text-warning'} />
-                            <span>{globalStats.otif}% OTIF</span>
-                        </div>
-                        <div className="mini-stat">
-                            <DollarSign size={16} />
-                            <span>{globalStats.revenue} MAD</span>
-                        </div>
+                    <div className="filter-group">
+                        <span className="filter-label">Statut:</span>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value as any)}
+                            className="glass-select"
+                        >
+                            <option value="all">Tous</option>
+                            <option value="delayed">Retards</option>
+                            <option value="on-time">À l'heure</option>
+                        </select>
                     </div>
-                )}
-            </header>
 
-            {/* Smart Filters Bar */}
-            <div className="filters-bar glass-card">
-                <div className="filter-group">
-                    <Filter size={18} />
-                    <span className="filter-label">Filtres :</span>
-
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value as any)}
-                        className="filter-select"
-                    >
-                        <option value="all">Tous les status</option>
-                        <option value="delayed">En Retard uniquement</option>
-                        <option value="on-time">À l'heure</option>
-                        <option value="warning">À Risque (Retard &lt; 2j)</option>
-                    </select>
-
-                    <select
-                        value={filterTransporteur}
-                        onChange={(e) => setFilterTransporteur(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">Tous les transporteurs</option>
-                        {availableTransporteurs.map(t => (
-                            <option key={t} value={t}>{t}</option>
-                        ))}
-                    </select>
-
-                    <div className="range-filter">
-                        <Scale size={16} />
-                        <input
-                            type="range"
-                            min="0"
-                            max="1000"
-                            step="50"
-                            value={filterMinWeight}
-                            onChange={(e) => setFilterMinWeight(parseInt(e.target.value))}
-                        />
-                        <span> &gt; {filterMinWeight} kg</span>
+                    <div className="filter-group">
+                        <span className="filter-label">Transporteur:</span>
+                        <select
+                            value={filterTransporteur}
+                            onChange={(e) => setFilterTransporteur(e.target.value)}
+                            className="glass-select"
+                        >
+                            <option value="all">Tous</option>
+                            {availableTransporteurs.map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
-                <div className="view-toggles">
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={showFlows}
-                            onChange={(e) => setShowFlows(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                        <span className="toggle-label">Afficher Flux</span>
-                    </label>
-                </div>
-            </div>
-
-            {/* Map Container */}
-            <div className="map-container-wrapper">
-                <MapContainer center={[31.7917, -7.0926]} zoom={6} scrollWheelZoom={true} className="leaflet-map">
-                    <LayersControl position="topright">
-                        <LayersControl.BaseLayer checked name="Dark Matter">
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                            />
-                        </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="OpenStreetMap">
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                        </LayersControl.BaseLayer>
-                    </LayersControl>
-
-                    {/* Hub Marker */}
-                    <Circle
-                        center={HUB_COORDINATES}
-                        pathOptions={{ color: '#00d9ff', fillColor: '#00d9ff', fillOpacity: 0.8 }}
-                        radius={15000}
+                <div className="toolbar-right">
+                    <button
+                        className={`sim-toggle-btn ${showFlows ? 'active' : ''}`}
+                        onClick={() => setShowFlows(!showFlows)}
                     >
-                        <Popup>
-                            <div className="popup-content hub-popup">
-                                <h3>HUB CENTRAL CASABLANCA</h3>
-                                <p>Point de départ de tous les flux</p>
-                            </div>
-                        </Popup>
-                    </Circle>
-
-                    {/* Regional Clusters */}
-                    {cityAggregates.map((city) => {
-                        // Dynamic sizing based on volume
-                        const radius = Math.max(5000, Math.sqrt(city.totalOrders) * 1000)
-
-                        // Dynamic styling based on performance
-                        const isProblematic = city.avgDelay > 1
-                        const color = isProblematic ? '#ff3366' : '#00ff88'
-
-                        return (
-                            <div key={city.name}>
-                                <Circle
-                                    center={city.coordinates}
-                                    pathOptions={{
-                                        color: color,
-                                        fillColor: color,
-                                        fillOpacity: 0.4
-                                    }}
-                                    radius={radius}
-                                >
-                                    <Popup>
-                                        <div className="popup-content">
-                                            <h3>{city.name}</h3>
-                                            <div className="popup-stat">
-                                                <span>Volume:</span>
-                                                <strong>{city.totalOrders} cmds</strong>
-                                            </div>
-                                            <div className="popup-stat">
-                                                <span>Retards:</span>
-                                                <strong style={{ color: isProblematic ? '#ff3366' : '#00ff88' }}>
-                                                    {city.delayedOrders} ({((city.delayedOrders / city.totalOrders) * 100).toFixed(0)}%)
-                                                </strong>
-                                            </div>
-                                            <div className="popup-stat">
-                                                <span>Délai Moy:</span>
-                                                <strong>{city.avgDelay.toFixed(1)} jours</strong>
-                                            </div>
-                                            <div className="popup-stat">
-                                                <span>Revenue:</span>
-                                                <strong>{(city.revenue).toLocaleString()} MAD</strong>
-                                            </div>
-                                            <div className="transporteur-badge">
-                                                <Truck size={12} /> {city.mainTransporteur}
-                                            </div>
-                                        </div>
-                                    </Popup>
-                                    <LeafletTooltip direction="top" offset={[0, -10]} opacity={0.8}>
-                                        {city.name}: {city.totalOrders} cmds
-                                    </LeafletTooltip>
-                                </Circle>
-
-                                {/* Flow Lines from Hub */}
-                                {showFlows && (
-                                    <Polyline
-                                        positions={[HUB_COORDINATES, city.coordinates]}
-                                        pathOptions={{
-                                            color: color,
-                                            weight: Math.max(1, city.totalOrders / 50), // Thicker lines for more volume
-                                            opacity: 0.3,
-                                            dashArray: '10, 10'
-                                        }}
-                                    />
-                                )}
-                            </div>
-                        )
-                    })}
-                </MapContainer>
+                        <Activity size={16} /> Flux
+                    </button>
+                </div>
             </div>
 
-            <div className="map-legend">
-                <div className="legend-item">
-                    <span className="dot hub"></span> Hub Central
-                </div>
-                <div className="legend-item">
-                    <span className="dot healthy"></span> Performance Optimale
-                </div>
-                <div className="legend-item">
-                    <span className="dot warning"></span> Retards Détectés
-                </div>
-                <div className="legend-item">
-                    <span className="line flow"></span> Flux Logistique (Épaisseur = Volume)
+            <div className="map-layout">
+                <div className="map-wrapper">
+                    <MapContainer center={[31.7917, -7.0926]} zoom={6} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+                        <LayersControl position="topright">
+                            <LayersControl.BaseLayer checked name="Dark Matter">
+                                <TileLayer
+                                    attribution='&copy; CARTO'
+                                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                />
+                            </LayersControl.BaseLayer>
+                            <LayersControl.BaseLayer name="OpenStreetMap">
+                                <TileLayer
+                                    attribution='&copy; OSM'
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                />
+                            </LayersControl.BaseLayer>
+                        </LayersControl>
+
+                        {/* Hub Marker */}
+                        <Circle
+                            center={HUB_COORDINATES}
+                            pathOptions={{ color: '#00d9ff', fillColor: '#00d9ff', fillOpacity: 0.8 }}
+                            radius={15000}
+                        />
+
+                        {/* City Clusters */}
+                        {cityAggregates.map((city) => {
+                            const radius = Math.max(5000, Math.sqrt(city.totalOrders) * 1000)
+                            const isProblematic = city.avgDelay > 1
+                            const color = isProblematic ? '#ff3366' : '#00ff88'
+
+                            return (
+                                <div key={city.name}>
+                                    <Circle
+                                        center={city.coordinates}
+                                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.4 }}
+                                        radius={radius}
+                                    >
+                                        <Popup className="custom-popup">
+                                            <div className="popup-content">
+                                                <h3>{city.name}</h3>
+                                                <div className="data-grid">
+                                                    <div className="data-item">
+                                                        <small>Volume</small>
+                                                        <strong>{city.totalOrders}</strong>
+                                                    </div>
+                                                    <div className="data-item">
+                                                        <small>Retards</small>
+                                                        <strong style={{ color: isProblematic ? '#ff3366' : '#00ff88' }}>
+                                                            {city.delayedOrders}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Popup>
+                                    </Circle>
+                                    {showFlows && <Polyline positions={[HUB_COORDINATES, city.coordinates]} pathOptions={{ color: color, weight: 1, opacity: 0.3 }} />}
+                                </div>
+                            )
+                        })}
+                    </MapContainer>
+
+                    {globalStats && (
+                        <div className="global-stats-overlay">
+                            <div className="stat-pill"><Package size={14} /> <strong>{globalStats.volume}</strong> Cmds</div>
+                            <div className="stat-pill"><Activity size={14} /> <strong>{globalStats.otif}%</strong> OTIF</div>
+                            <div className="stat-pill"><DollarSign size={14} /> <strong>{globalStats.revenue}</strong> MAD</div>
+                        </div>
+                    )}
+
+                    <div className="map-legend-overlay">
+                        <h4>Légende Performance</h4>
+                        <div className="stop-light">
+                            <div><span className="dot" style={{ backgroundColor: '#00ff88' }}></span> Optimale</div>
+                            <div><span className="dot" style={{ backgroundColor: '#ff3366' }}></span> Retard &gt; 1j</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

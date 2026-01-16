@@ -270,29 +270,27 @@ function Dashboard() {
 
             {/* KPI Cards */}
             <div className="stats-grid">
-                <div className="stat-card glass-card">
-                    <div className="card-header-row">
-                        {stats.map((stat, index) => (
-                            <div key={index} className="stat-item">
-                                <div className="stat-icon" style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
-                                    <stat.icon size={24} />
-                                </div>
-                                <div className="stat-info">
-                                    <span className="stat-title">{stat.title}</span>
-                                    <h3 style={{ color: stat.color }}>{stat.value}</h3>
-                                    <span className="stat-change">{stat.change}</span>
-                                </div>
-                            </div>
-                        ))}
+                {stats.map((stat, index) => (
+                    <div key={index} className="stat-card glass-card">
+                        <div className="stat-icon" style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
+                            <stat.icon size={24} />
+                        </div>
+                        <div className="stat-content">
+                            <span className="stat-title">{stat.title}</span>
+                            <h3 style={{ color: stat.color }}>{stat.value}</h3>
+                            <span className="stat-change">{stat.change}</span>
+                        </div>
+                        {index === 0 && (
+                            <button
+                                className="info-btn-mini absolute-top-right"
+                                title="Info KPIs"
+                                onClick={(e) => { e.stopPropagation(); setActiveHelp('kpis'); }}
+                            >
+                                <Info size={14} />
+                            </button>
+                        )}
                     </div>
-                    <button
-                        className="info-btn-mini"
-                        title="Info KPIs"
-                        onClick={() => setActiveHelp('kpis')}
-                    >
-                        <Info size={14} />
-                    </button>
-                </div>
+                ))}
             </div>
 
             {/* Charts Section */}
