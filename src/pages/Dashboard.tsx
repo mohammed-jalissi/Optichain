@@ -262,7 +262,7 @@ function Dashboard() {
                         accept=".pbix"
                         style={{ display: 'none' }}
                     />
-                    <button className="primary-btn" onClick={handlePowerBIClick}>
+                    <button className="power-bi-btn" onClick={handlePowerBIClick}>
                         <FileText size={18} /> Connect Power BI
                     </button>
                 </div>

@@ -177,7 +177,7 @@ function MapIntelligence() {
         <div className="map-intelligence-container">
             <div className="map-toolbar">
                 <div className="toolbar-left">
-                    <h2 className="toolbar-title"><Globe size={20} /> Intelligence Géographique</h2>
+                    <h2 className="toolbar-title"><Activity size={20} /> Vision Totale</h2>
 
                     <div className="filter-group">
                         <span className="filter-label">Statut:</span>
