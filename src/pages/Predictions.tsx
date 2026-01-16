@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { AlertCircle, CheckCircle2, Calculator, TrendingUp } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import './Predictions.css'
-import trainingResults from '../data/training_results.json'
 
 interface PredictionInput {
     quantite: number
@@ -27,6 +26,8 @@ function Predictions() {
 
     // Options lists
     const [transporteurOptions, setTransporteurOptions] = useState<string[]>([])
+    const [regionOptions, setRegionOptions] = useState<string[]>([])
+    const [modeTransportOptions, setModeTransportOptions] = useState<string[]>([])
 
     const { data: globalData, loading } = useData()
 
@@ -34,13 +35,20 @@ function Predictions() {
         if (!loading && globalData && globalData.length > 0) {
             const data = globalData
             const transporteurs = [...new Set(data.map((item: any) => item.transporteur).filter(Boolean))].sort() as string[]
+            const regions = [...new Set(data.map((item: any) => item.region).filter(Boolean))].sort() as string[]
+            const modes = [...new Set(data.map((item: any) => item.mode_transport).filter(Boolean))].sort() as string[]
 
             setTransporteurOptions(transporteurs)
+            setRegionOptions(regions)
+            setModeTransportOptions(modes)
 
-            // Set default values if not already set
+            // Set default values if not already set (e.g. CTM, Casablanca, Routier)
+            // Screenshot shows 'CTM' (likely CTM Messagerie), 'Casablanca', 'Routier'
             setFormData(prev => ({
                 ...prev,
-                transporteur: prev.transporteur || transporteurs[0] || ''
+                transporteur: prev.transporteur || transporteurs.find(t => t.includes('CTM')) || transporteurs[0] || '',
+                region: prev.region || 'Casablanca' || regions[0] || '',
+                mode_transport: prev.mode_transport || 'Routier' || modes[0] || ''
             }))
         }
     }, [globalData, loading])
@@ -54,7 +62,7 @@ function Predictions() {
             let score = 0
             if (poids_kg > 300) score += 0.3
             if (delai_livraison > 5) score += 0.2
-            if (transporteur === 'Amana') score += 0.25
+            if (transporteur && transporteur.includes('Amana')) score += 0.25
 
             const isLate = score > 0.5
 
@@ -68,7 +76,7 @@ function Predictions() {
             // Logic for regression (Cost)
             const { poids_kg, quantite, transporteur } = formData
             let baseRate = 10
-            if (transporteur === 'CTM Messagerie') baseRate = 12
+            if (transporteur && transporteur.includes('CTM')) baseRate = 12
 
             const cost = (poids_kg * baseRate) + (quantite * 0.5)
 
@@ -149,10 +157,33 @@ function Predictions() {
                                 {transporteurOptions.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
+
+                        {/* New Fields from Screenshot */}
+                        <div className="form-group">
+                            <label>Région</label>
+                            <select
+                                className="form-input"
+                                value={formData.region}
+                                onChange={e => setFormData({ ...formData, region: e.target.value })}
+                            >
+                                {regionOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Mode Transport</label>
+                            <select
+                                className="form-input"
+                                value={formData.mode_transport}
+                                onChange={e => setFormData({ ...formData, mode_transport: e.target.value })}
+                            >
+                                {modeTransportOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                        </div>
                     </div>
 
                     <button type="submit" className="primary-btn" style={{ width: '100%', marginTop: '1rem' }}>
-                        Lancer la Prédiction
+                        Générer la Prédiction
                     </button>
                 </form>
 
@@ -208,10 +239,22 @@ function Predictions() {
                                             <td>0.995</td>
                                         </tr>
                                         <tr>
-                                            <td>Support Vector</td>
-                                            <td>98.5%</td>
-                                            <td>0.985</td>
-                                            <td>0.988</td>
+                                            <td>SVM</td>
+                                            <td>99.0%</td>
+                                            <td>0.990</td>
+                                            <td>0.993</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Logistic Regression</td>
+                                            <td>99.0%</td>
+                                            <td>0.990</td>
+                                            <td>0.990</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Gradient Boosting</td>
+                                            <td>99.0%</td>
+                                            <td>0.990</td>
+                                            <td>0.990</td>
                                         </tr>
                                     </tbody>
                                 </table>
